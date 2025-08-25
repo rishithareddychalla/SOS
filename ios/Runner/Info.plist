@@ -45,5 +45,17 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSContactsUsageDescription</key>
+	<string>This app needs access to your contacts so you can select them as emergency contacts.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to send it to your emergency contacts during an SOS.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>This app needs access to your location to send it to your emergency contacts during an SOS.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>This app needs access to your location to send it to your emergency contacts during an SOS.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>voip</string>
+	</array>
 </dict>
 </plist>
