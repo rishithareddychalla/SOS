@@ -7,20 +7,45 @@ import 'package:go_router/go_router.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'main.dart'; // Import for contactsProvider
 
-class ContactsScreen extends ConsumerStatefulWidget {
+class ContactsScreen extends ConsumerWidget {
   const ContactsScreen({super.key});
 
   @override
-  _ContactsScreenState createState() => _ContactsScreenState();
-}
+  Widget build(BuildContext context, WidgetRef ref) {
+    final contacts = ref.watch(contactsProvider);
 
-class _ContactsScreenState extends ConsumerState<ContactsScreen> {
-  Timer? _debounce;
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
+    return contacts.when(
+      data: (contactList) => Scaffold(
+        appBar: AppBar(
+          leading: IconButton(
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => context.go("/"),
+          ),
+          title: const Text('Manage Emergency Contacts'),
+          backgroundColor: const Color(0xFF8B1E9B),
+        ),
+        body: ListView.builder(
+          itemCount: contactList.length,
+          itemBuilder: (context, index) {
+            return ListTile(
+              title: Text(contactList[index]['name']!),
+              subtitle: Text(contactList[index]['phone']!),
+              trailing: IconButton(
+                icon: const Icon(Icons.delete),
+                onPressed: () =>
+                    ref.read(contactsProvider.notifier).deleteContact(index),
+              ),
+            );
+          },
+        ),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _pickContact(context, ref),
+          child: const Icon(Icons.add),
+        ),
+      ),
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stack) => Center(child: Text('Error: $error')),
+    );
   }
 
   Future<void> _pickContact(BuildContext context, WidgetRef ref) async {
@@ -41,7 +66,6 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
     }
 
     try {
-      // Fetch all contacts with properties ONCE.
       final allContacts = await FlutterContacts.getContacts(
         withProperties: true, withPhoto: false,
       );
@@ -54,14 +78,14 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
         }
         return;
       }
-
+      
       final validContacts = allContacts.where((c) => c.phones.isNotEmpty).toList();
 
       if (context.mounted) {
         showDialog(
           context: context,
           builder: (context) =>
-              _ContactSelectionDialog(contacts: validContacts, ref: ref),
+              _ContactSelectionDialog(contacts: validContacts),
         );
       }
 
@@ -76,17 +100,17 @@ class _ContactsScreenState extends ConsumerState<ContactsScreen> {
   }
 }
 
-class _ContactSelectionDialog extends StatefulWidget {
+// This class is now correctly defined OUTSIDE of any other class.
+class _ContactSelectionDialog extends ConsumerStatefulWidget {
   final List<Contact> contacts;
-  final WidgetRef ref;
 
-  const _ContactSelectionDialog({required this.contacts, required this.ref});
+  const _ContactSelectionDialog({required this.contacts});
 
   @override
   _ContactSelectionDialogState createState() => _ContactSelectionDialogState();
 }
 
-class _ContactSelectionDialogState extends State<_ContactSelectionDialog> {
+class _ContactSelectionDialogState extends ConsumerState<_ContactSelectionDialog> {
   late List<Contact> _filteredContacts;
   final _searchController = TextEditingController();
 
@@ -146,7 +170,7 @@ class _ContactSelectionDialogState extends State<_ContactSelectionDialog> {
                           title: Text(contact.displayName),
                           subtitle: Text(phone),
                           onTap: () {
-                            widget.ref.read(contactsProvider.notifier).addContact(
+                            ref.read(contactsProvider.notifier).addContact(
                                   contact.displayName,
                                   phone,
                                 );
@@ -165,44 +189,6 @@ class _ContactSelectionDialogState extends State<_ContactSelectionDialog> {
           child: const Text('Cancel'),
         ),
       ],
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final contacts = ref.watch(contactsProvider);
-
-    return contacts.when(
-      data: (contactList) => Scaffold(
-        appBar: AppBar(
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
-            onPressed: () => context.go("/"),
-          ),
-          title: const Text('Manage Emergency Contacts'),
-          backgroundColor: const Color(0xFF8B1E9B),
-        ),
-        body: ListView.builder(
-          itemCount: contactList.length,
-          itemBuilder: (context, index) {
-            return ListTile(
-              title: Text(contactList[index]['name']!),
-              subtitle: Text(contactList[index]['phone']!),
-              trailing: IconButton(
-                icon: const Icon(Icons.delete),
-                onPressed: () =>
-                    ref.read(contactsProvider.notifier).deleteContact(index),
-              ),
-            );
-          },
-        ),
-        floatingActionButton: FloatingActionButton(
-          onPressed: () => _pickContact(context, ref),
-          child: const Icon(Icons.add),
-        ),
-      ),
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, stack) => Center(child: Text('Error: $error')),
     );
   }
 }
