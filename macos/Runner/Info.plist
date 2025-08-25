@@ -28,5 +28,11 @@
 	<string>MainMenu</string>
 	<key>NSPrincipalClass</key>
 	<string>NSApplication</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+<string>This app needs access to your location to send it to your emergency contacts.</string>
+<key>NSLocationAlwaysUsageDescription</key>
+<string>This app needs access to your location to send it to your emergency contacts.</string>
+<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+<string>This app needs access to your location to send it to your emergency contacts.</string>
 </dict>
 </plist>
