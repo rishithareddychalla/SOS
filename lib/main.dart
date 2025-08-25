@@ -78,43 +78,122 @@ final sequentialCallProvider =
       return SequentialCallNotifier();
     });
 
+// class SequentialCallNotifier extends StateNotifier<List<String>> {
+//   StreamSubscription<PhoneState>? _callStateSubscription;
+//   int _currentIndex = 0;
+//   bool _isCalling = false;
+
+//   SequentialCallNotifier() : super([]);
+
+//   void startSOS(List<String> numbers) {
+//     if (numbers.isEmpty) return;
+//     state = List.from(numbers);
+//     _currentIndex = 0;
+//     _listenToCallStates();
+//     _callCurrentNumber();
+//   }
+
+//   void _callCurrentNumber() async {
+//     if (_currentIndex >= state.length) {
+//       stopSOS();
+//       return;
+//     }
+
+//     final numberToCall = state[_currentIndex];
+//     debugPrint('📞 Attempting to call number: $numberToCall');
+//     try {
+//       _isCalling = true;
+//       await FlutterPhoneDirectCaller.callNumber(numberToCall);
+//     } catch (e) {
+//       debugPrint('❌ Error calling $numberToCall: $e');
+//       _handleCallEnded();
+//     }
+//   }
+
+//   void _handleCallEnded() {
+//     debugPrint('✅ Call ended with ${state[_currentIndex]}');
+//     _isCalling = false;
+//     _currentIndex++;
+
+//     if (_currentIndex < state.length) {
+//       debugPrint('➡️ Moving to next number in 2 seconds...');
+//       Future.delayed(const Duration(seconds: 2), _callCurrentNumber);
+//     } else {
+//       debugPrint('🏁 Finished all calls.');
+//       stopSOS();
+//     }
+//   }
+
+//   void _listenToCallStates() {
+//     _callStateSubscription?.cancel();
+//     _callStateSubscription = PhoneState.stream.listen((phoneState) {
+//       debugPrint('📲 Received call state: ${phoneState.status}');
+
+//       if (phoneState.status == PhoneStateStatus.CALL_ENDED && _isCalling) {
+//         _handleCallEnded();
+//       }
+//     });
+//   }
+
+//   void stopSOS() {
+//     debugPrint('🛑 Stopping SOS, cancelling call listener.');
+//     _callStateSubscription?.cancel();
+//     state = [];
+//     _currentIndex = 0;
+//     _isCalling = false;
+//   }
+
+//   @override
+//   void dispose() {
+//     _callStateSubscription?.cancel();
+//     super.dispose();
+//   }
+// }
+
 class SequentialCallNotifier extends StateNotifier<List<String>> {
   StreamSubscription<PhoneState>? _callStateSubscription;
+  int _currentIndex = 0;
+  bool _isCalling = false;
+  bool _wasInCall = false; // 👈 tracks if we really had a call in progress
 
   SequentialCallNotifier() : super([]);
 
   void startSOS(List<String> numbers) {
     if (numbers.isEmpty) return;
     state = List.from(numbers);
+    _currentIndex = 0;
     _listenToCallStates();
-    _callNextNumber();
+    _callCurrentNumber();
   }
-  void _callNextNumber() async {
-    if (state.isEmpty) {
+
+  void _callCurrentNumber() async {
+    if (_currentIndex >= state.length) {
       stopSOS();
       return;
     }
-    final numberToCall = state.first;
-    debugPrint('Attempting to call number: $numberToCall');
+
+    final numberToCall = state[_currentIndex];
+    debugPrint('📞 Attempting to call number: $numberToCall');
     try {
+      _isCalling = true;
+      _wasInCall = false;
       await FlutterPhoneDirectCaller.callNumber(numberToCall);
     } catch (e) {
-      debugPrint('Error calling number $numberToCall: $e');
-      _handleCallEnded();
+      debugPrint('❌ Error calling $numberToCall: $e');
+      _advanceToNext();
     }
   }
 
-  void _handleCallEnded() {
-    debugPrint('Detected call ended.');
-    if (state.isNotEmpty) {
-      state = List.from(state)..removeAt(0);
-    }
+  void _advanceToNext() {
+    debugPrint('✅ Call finished with ${state[_currentIndex]}');
+    _isCalling = false;
+    _currentIndex++;
 
-    if (state.isNotEmpty) {
-      debugPrint('More numbers in queue. Calling next number in 2 seconds.');
-      Future.delayed(const Duration(seconds: 2), _callNextNumber);
+    if (_currentIndex < state.length) {
+      debugPrint('➡️ Moving to next number in 2 seconds...');
+      Future.delayed(const Duration(seconds: 2), _callCurrentNumber);
     } else {
-      debugPrint('No more numbers in queue. Stopping SOS.');
+      debugPrint('🏁 Finished all calls.');
       stopSOS();
     }
   }
@@ -122,17 +201,28 @@ class SequentialCallNotifier extends StateNotifier<List<String>> {
   void _listenToCallStates() {
     _callStateSubscription?.cancel();
     _callStateSubscription = PhoneState.stream.listen((phoneState) {
-      debugPrint('Received call state event: ${phoneState.status}');
-      if (phoneState.status == PhoneStateStatus.CALL_ENDED) {
-        _handleCallEnded();
+      debugPrint('📲 Received call state: ${phoneState.status}');
+
+      if (!_isCalling) return;
+
+      if (phoneState.status == PhoneStateStatus.CALL_STARTED) {
+        _wasInCall = true;
+      }
+
+      if (phoneState.status == PhoneStateStatus.CALL_ENDED && _wasInCall) {
+        _wasInCall = false; // reset
+        _advanceToNext();
       }
     });
   }
 
   void stopSOS() {
-    debugPrint('Stopping SOS and cancelling call state listener.');
+    debugPrint('🛑 Stopping SOS, cancelling call listener.');
     _callStateSubscription?.cancel();
     state = [];
+    _currentIndex = 0;
+    _isCalling = false;
+    _wasInCall = false;
   }
 
   @override
@@ -237,6 +327,7 @@ class MainScreen extends ConsumerWidget {
     );
   }
 
+ 
   Future<void> _handleSOS(BuildContext context, WidgetRef ref) async {
     final contactList = ref.read(contactsProvider).value ?? [];
     if (contactList.isEmpty) {
@@ -249,9 +340,8 @@ class MainScreen extends ConsumerWidget {
     final hasPermissions = await _requestPermissions(context);
     if (!hasPermissions) return;
 
-    context.go('/calling');
-
     try {
+      // Start all the logic BEFORE navigating
       final position = await _determinePosition();
       final locationMessage =
           "Emergency! I need help. My current location is: https://www.google.com/maps/search/?api=1&query=${position.latitude},${position.longitude}";
@@ -262,14 +352,19 @@ class MainScreen extends ConsumerWidget {
         await telephony.sendSms(to: number, message: locationMessage);
       }
 
+      // Start the sequential caller
       ref.read(sequentialCallProvider.notifier).startSOS(phoneNumbers);
+
+      // NOW that all the work has started, navigate to the calling screen.
+      if (context.mounted) {
+        context.go('/calling');
+      }
     } catch (e) {
-      debugPrint('An error occurred during SOS: $e');
+      debugPrint('An error occurred during SOS setup: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('An error occurred: $e')));
-        context.go('/');
       }
     }
   }
