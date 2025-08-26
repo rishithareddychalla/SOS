@@ -18,20 +18,32 @@ class ContactsScreen extends ConsumerWidget {
       data: (contactList) => Scaffold(
         appBar: AppBar(
           leading: IconButton(
-            icon: const Icon(Icons.arrow_back),
+            icon: const Icon(Icons.arrow_back, color: Colors.white),
             onPressed: () => context.go("/"),
           ),
-          title: const Text('Manage Emergency Contacts'),
-          backgroundColor: const Color(0xFF8B1E9B),
+          title: const Text(
+            'Manage Emergency Contacts',
+            style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          ),
+          backgroundColor: const Color(0xFFFB51963),
         ),
         body: ListView.builder(
           itemCount: contactList.length,
           itemBuilder: (context, index) {
             return ListTile(
-              title: Text(contactList[index]['name']!),
-              subtitle: Text(contactList[index]['phone']!),
+              title: Text(
+                contactList[index]['name']!,
+                style: TextStyle(
+                  color: Colors.grey[800],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              subtitle: Text(
+                contactList[index]['phone']!,
+                style: TextStyle(color: Colors.grey[900]),
+              ),
               trailing: IconButton(
-                icon: const Icon(Icons.delete),
+                icon: Icon(Icons.delete, color: Colors.grey[800]),
                 onPressed: () =>
                     ref.read(contactsProvider.notifier).deleteContact(index),
               ),
@@ -39,8 +51,9 @@ class ContactsScreen extends ConsumerWidget {
           },
         ),
         floatingActionButton: FloatingActionButton(
+          backgroundColor: Color(0xFFFB51963),
           onPressed: () => _pickContact(context, ref),
-          child: const Icon(Icons.add),
+          child: Icon(Icons.add, color: Colors.white),
         ),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
@@ -56,7 +69,9 @@ class ContactsScreen extends ConsumerWidget {
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text('Contact permission is required to select contacts.'),
+              content: Text(
+                'Contact permission is required to select contacts.',
+              ),
             ),
           );
           await openAppSettings();
@@ -67,7 +82,8 @@ class ContactsScreen extends ConsumerWidget {
 
     try {
       final allContacts = await FlutterContacts.getContacts(
-        withProperties: true, withPhoto: false,
+        withProperties: true,
+        withPhoto: false,
       );
 
       if (allContacts.isEmpty) {
@@ -78,8 +94,10 @@ class ContactsScreen extends ConsumerWidget {
         }
         return;
       }
-      
-      final validContacts = allContacts.where((c) => c.phones.isNotEmpty).toList();
+
+      final validContacts = allContacts
+          .where((c) => c.phones.isNotEmpty)
+          .toList();
 
       if (context.mounted) {
         showDialog(
@@ -88,7 +106,6 @@ class ContactsScreen extends ConsumerWidget {
               _ContactSelectionDialog(contacts: validContacts),
         );
       }
-
     } catch (e) {
       debugPrint('Error fetching contacts: $e');
       if (context.mounted) {
@@ -109,7 +126,8 @@ class _ContactSelectionDialog extends ConsumerStatefulWidget {
   _ContactSelectionDialogState createState() => _ContactSelectionDialogState();
 }
 
-class _ContactSelectionDialogState extends ConsumerState<_ContactSelectionDialog> {
+class _ContactSelectionDialogState
+    extends ConsumerState<_ContactSelectionDialog> {
   late List<Contact> _filteredContacts;
   final _searchController = TextEditingController();
 
@@ -139,7 +157,14 @@ class _ContactSelectionDialogState extends ConsumerState<_ContactSelectionDialog
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: const Text('Select a Contact'),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(20), // soft rounded corners
+      ),
+      backgroundColor: Colors.grey[50], // subtle background
+      title: const Text(
+        'Select a Contact',
+        style: TextStyle(fontWeight: FontWeight.w600, fontSize: 18),
+      ),
       content: SizedBox(
         width: double.maxFinite,
         child: Column(
@@ -149,32 +174,58 @@ class _ContactSelectionDialogState extends ConsumerState<_ContactSelectionDialog
               controller: _searchController,
               decoration: InputDecoration(
                 hintText: 'Search contacts...',
-                prefixIcon: const Icon(Icons.search),
+                prefixIcon: const Icon(Icons.search, color: Colors.grey),
+                filled: true,
+                fillColor: Colors.grey[200],
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(8.0),
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none, // cleaner look
                 ),
               ),
             ),
             const SizedBox(height: 16),
             Expanded(
               child: _filteredContacts.isEmpty
-                  ? const Center(child: Text('No matching contacts found.'))
+                  ? const Center(
+                      child: Text(
+                        'No matching contacts found.',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    )
                   : ListView.builder(
                       shrinkWrap: true,
                       itemCount: _filteredContacts.length,
                       itemBuilder: (context, index) {
                         final contact = _filteredContacts[index];
                         final phone = contact.phones.first.number;
-                        return ListTile(
-                          title: Text(contact.displayName),
-                          subtitle: Text(phone),
-                          onTap: () {
-                            ref.read(contactsProvider.notifier).addContact(
-                                  contact.displayName,
-                                  phone,
-                                );
-                            Navigator.of(context).pop();
-                          },
+
+                        return Card(
+                          elevation: 0,
+                          margin: const EdgeInsets.symmetric(vertical: 4),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: ListTile(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            title: Text(
+                              contact.displayName,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                            subtitle: Text(
+                              phone,
+                              style: const TextStyle(color: Colors.grey),
+                            ),
+                            onTap: () {
+                              ref
+                                  .read(contactsProvider.notifier)
+                                  .addContact(contact.displayName, phone);
+                              Navigator.of(context).pop();
+                            },
+                          ),
                         );
                       },
                     ),
@@ -185,6 +236,7 @@ class _ContactSelectionDialogState extends ConsumerState<_ContactSelectionDialog
       actions: [
         TextButton(
           onPressed: () => Navigator.of(context).pop(),
+          style: TextButton.styleFrom(foregroundColor: Color(0xFFFB51963)),
           child: const Text('Cancel'),
         ),
       ],

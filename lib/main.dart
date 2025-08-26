@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:sos_app/router.dart';
 import 'package:telephony/telephony.dart';
 import 'package:flutter_phone_direct_caller/flutter_phone_direct_caller.dart';
 import 'package:phone_state/phone_state.dart';
@@ -72,7 +73,6 @@ class ContactsNotifier
   }
 }
 
-
 final sequentialCallProvider =
     StateNotifierProvider<SequentialCallNotifier, List<String>>((ref) {
       return SequentialCallNotifier();
@@ -82,7 +82,8 @@ class SequentialCallNotifier extends StateNotifier<List<String>> {
   StreamSubscription<PhoneState>? _callStateSubscription;
   int _currentIndex = 0;
   bool _isCalling = false;
-  bool _wasInCall = false; 
+  bool _wasInCall = false;
+  Timer? _nextCallTimer; // <-- add this
 
   SequentialCallNotifier() : super([]);
 
@@ -119,7 +120,7 @@ class SequentialCallNotifier extends StateNotifier<List<String>> {
 
     if (_currentIndex < state.length) {
       debugPrint('➡️ Moving to next number in 2 seconds...');
-      Future.delayed(const Duration(seconds: 2), _callCurrentNumber);
+      _nextCallTimer = Timer(const Duration(seconds: 2), _callCurrentNumber);
     } else {
       debugPrint('🏁 Finished all calls.');
       stopSOS();
@@ -138,7 +139,7 @@ class SequentialCallNotifier extends StateNotifier<List<String>> {
       }
 
       if (phoneState.status == PhoneStateStatus.CALL_ENDED && _wasInCall) {
-        _wasInCall = false; 
+        _wasInCall = false;
         _advanceToNext();
       }
     });
@@ -147,6 +148,7 @@ class SequentialCallNotifier extends StateNotifier<List<String>> {
   void stopSOS() {
     debugPrint('🛑 Stopping SOS, cancelling call listener.');
     _callStateSubscription?.cancel();
+    _nextCallTimer?.cancel(); // <-- cancel future scheduled calls
     state = [];
     _currentIndex = 0;
     _isCalling = false;
@@ -156,25 +158,12 @@ class SequentialCallNotifier extends StateNotifier<List<String>> {
   @override
   void dispose() {
     _callStateSubscription?.cancel();
+    _nextCallTimer?.cancel();
     super.dispose();
   }
 }
 
 // --- UI and App Setup ---
-
-final GoRouter router = GoRouter(
-  routes: [
-    GoRoute(path: '/', builder: (context, state) => MainScreen()),
-    GoRoute(
-      path: '/contacts',
-      builder: (context, state) => const ContactsScreen(),
-    ),
-    GoRoute(
-      path: '/calling',
-      builder: (context, state) => const CallingScreen(),
-    ),
-  ],
-);
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -187,6 +176,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp.router(
+      debugShowCheckedModeBanner: false,
       title: 'SOS',
       theme: ThemeData(
         scaffoldBackgroundColor: Colors.white,
@@ -212,7 +202,7 @@ class MainScreen extends ConsumerWidget {
       Permission.sms,
       Permission.location,
       Permission.phone,
-      Permission.contacts, 
+      Permission.contacts,
       Permission.notification,
     ];
     Map<Permission, PermissionStatus> statuses = await permissions.request();
@@ -255,7 +245,6 @@ class MainScreen extends ConsumerWidget {
     );
   }
 
- 
   Future<void> _handleSOS(BuildContext context, WidgetRef ref) async {
     final contactList = ref.read(contactsProvider).value ?? [];
     if (contactList.isEmpty) {
@@ -301,7 +290,7 @@ class MainScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SOS', style: TextStyle(color: Colors.white)),
-        backgroundColor: const Color(0xFF8B1E9B),
+        backgroundColor: const Color(0xFFFB51963),
         actions: [
           IconButton(
             icon: const Icon(Icons.contacts, color: Colors.white),
@@ -315,38 +304,65 @@ class MainScreen extends ConsumerWidget {
           children: [
             GestureDetector(
               onTap: () => _handleSOS(context, ref),
-              child: Container(
-                width: 200,
-                height: 200,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFFD81B60), Color(0xFF8B1E9B)],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFFD81B60).withOpacity(0.3),
-                      spreadRadius: 10,
-                      blurRadius: 20,
-                      offset: const Offset(0, 0),
-                    ),
-                  ],
-                ),
-                child: const Center(
-                  child: Text(
-                    'SOS',
-                    style: TextStyle(
-                      fontSize: 48,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  // Outer circle
+                  Container(
+                    width: 245,
+                    height: 245,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(
+                        0xFFFF8A9D9,
+                      ).withOpacity(0.3), // faint background
                     ),
                   ),
-                ),
+
+                  // Middle circle
+                  Container(
+                    width: 220,
+                    height: 220,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(
+                        0xFFFD92981,
+                      ).withOpacity(0.6), // darker ring
+                    ),
+                  ),
+
+                  // Inner circle with gradient
+                  Container(
+                    width: 200,
+                    height: 200,
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        center: Alignment.center,
+                        radius: 0.8,
+                        colors: [
+                          Color(0xFFFD92981), // lighter / inner
+                          Color(0xFFF9B1955), // darker / outer
+                        ],
+                        stops: [0.3, 1.0],
+                      ),
+                    ),
+                    child: const Center(
+                      child: Text(
+                        'SOS',
+                        style: TextStyle(
+                          fontSize: 48,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 20),
+
+            const SizedBox(height: 50),
             const Text(
               'Tapping SOS will call all emergency contacts and send them your location.',
               textAlign: TextAlign.center,

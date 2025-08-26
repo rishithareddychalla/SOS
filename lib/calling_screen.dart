@@ -26,27 +26,76 @@ class CallingScreen extends ConsumerWidget {
     return WillPopScope(
       onWillPop: () async => false,
       child: Scaffold(
+        appBar: AppBar(
+          automaticallyImplyLeading: false,
+          backgroundColor: const Color(0xFFFB51963),
+        ),
         body: SafeArea(
           child: Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Color(0xFFD81B60), Color(0xFF8B1E9B)],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
+            decoration: const BoxDecoration(color: Color(0xFFFB51963)),
             child: Center(
               child: SizedBox(
                 width: double.infinity,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Container(
-                      width: 200,
-                      height: 200,
-                      // ... (rest of UI is the same)
+                    Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Outer circle
+                        Container(
+                          width: 245,
+                          height: 245,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(
+                              0xFFF821949,
+                            ).withOpacity(0.3), // faint background
+                          ),
+                        ),
+
+                        // Middle circle
+                        Container(
+                          width: 220,
+                          height: 220,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: const Color(
+                              0xFFFE7E7E7,
+                            ).withOpacity(0.6), // darker ring
+                          ),
+                        ),
+
+                        // Inner circle with gradient
+                        Container(
+                          width: 200,
+                          height: 200,
+                          decoration: const BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              center: Alignment.center,
+                              radius: 0.8,
+                              colors: [
+                                Color(0xFFFFFFFFF), // lighter / inner
+                                Color(0xFFFCCCBCB), // darker / outer
+                              ],
+                              stops: [0.3, 1.0],
+                            ),
+                          ),
+                          child: const Center(
+                            child: Text(
+                              'SOS',
+                              style: TextStyle(
+                                fontSize: 48,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFFFB51963),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 30),
+                    const SizedBox(height: 10),
                     Text(
                       statusText,
                       textAlign: TextAlign.center,
