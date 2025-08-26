@@ -10,7 +10,7 @@ class CallingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final remainingNumbers = ref.watch(sequentialCallProvider);
     final allContacts = ref.watch(contactsProvider).value ?? [];
-    
+
     String statusText;
     if (remainingNumbers.isNotEmpty) {
       final currentNumber = remainingNumbers.first;
@@ -18,7 +18,7 @@ class CallingScreen extends ConsumerWidget {
         (c) => c['phone'] == currentNumber,
         orElse: () => {'name': 'Unknown'},
       )['name'];
-      statusText = 'Calling $contactName...\\n($currentNumber)';
+      statusText = 'Calling $contactName...\n($currentNumber)';
     } else {
       statusText = 'Finished calling all emergency contacts.';
     }
@@ -73,7 +73,9 @@ class CallingScreen extends ConsumerWidget {
                         },
                         // ... (rest of button is the same)
                         child: Text(
-                          remainingNumbers.isNotEmpty ? 'Stop SOS' : 'Return to Home',
+                          remainingNumbers.isNotEmpty
+                              ? 'Stop SOS'
+                              : 'Return to Home',
                           style: const TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,

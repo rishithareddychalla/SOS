@@ -100,7 +100,6 @@ class ContactsScreen extends ConsumerWidget {
   }
 }
 
-// This class is now correctly defined OUTSIDE of any other class.
 class _ContactSelectionDialog extends ConsumerStatefulWidget {
   final List<Contact> contacts;
 
