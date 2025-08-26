@@ -19,7 +19,7 @@ class ContactsScreen extends ConsumerWidget {
         appBar: AppBar(
           leading: IconButton(
             icon: const Icon(Icons.arrow_back, color: Colors.white),
-            onPressed: () => context.go("/"),
+            onPressed: () => context.go('/'),
           ),
           title: const Text(
             'Manage Emergency Contacts',
@@ -27,29 +27,46 @@ class ContactsScreen extends ConsumerWidget {
           ),
           backgroundColor: const Color(0xFFFB51963),
         ),
-        body: ListView.builder(
-          itemCount: contactList.length,
-          itemBuilder: (context, index) {
-            return ListTile(
-              title: Text(
-                contactList[index]['name']!,
-                style: TextStyle(
-                  color: Colors.grey[800],
-                  fontWeight: FontWeight.bold,
-                ),
+        body: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: contactList.length,
+                itemBuilder: (context, index) {
+                  return ListTile(
+                    title: Text(
+                      contactList[index]['name']!,
+                      style: TextStyle(
+                        color: Colors.grey[800],
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    subtitle: Text(
+                      contactList[index]['phone']!,
+                      style: TextStyle(color: Colors.grey[900]),
+                    ),
+                    trailing: IconButton(
+                      icon: Icon(Icons.delete, color: Colors.grey[800]),
+                      onPressed: () => ref
+                          .read(contactsProvider.notifier)
+                          .deleteContact(index),
+                    ),
+                  );
+                },
               ),
-              subtitle: Text(
-                contactList[index]['phone']!,
-                style: TextStyle(color: Colors.grey[900]),
+            ),
+            const Spacer(), // <-- pushes logo to bottom
+
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Image.asset(
+                'assets/images/logo_pink.png', // place your logo file here
+                height: 60, // adjust size
               ),
-              trailing: IconButton(
-                icon: Icon(Icons.delete, color: Colors.grey[800]),
-                onPressed: () =>
-                    ref.read(contactsProvider.notifier).deleteContact(index),
-              ),
-            );
-          },
+            ),
+          ],
         ),
+
         floatingActionButton: FloatingActionButton(
           backgroundColor: Color(0xFFFB51963),
           onPressed: () => _pickContact(context, ref),

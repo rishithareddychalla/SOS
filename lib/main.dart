@@ -289,7 +289,10 @@ class MainScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SOS', style: TextStyle(color: Colors.white)),
+        title: Image.asset(
+          'assets/images/logo_white.png', // your logo path
+          height: 30, // adjust as needed
+        ),
         backgroundColor: const Color(0xFFFB51963),
         actions: [
           IconButton(
@@ -367,6 +370,15 @@ class MainScreen extends ConsumerWidget {
               'Tapping SOS will call all emergency contacts and send them your location.',
               textAlign: TextAlign.center,
               style: TextStyle(fontSize: 16, color: Colors.black54),
+            ),
+            const SizedBox(height: 50), // <-- pushes logo to bottom
+
+            Padding(
+              padding: const EdgeInsets.only(bottom: 20),
+              child: Image.asset(
+                'assets/images/logo_pink.png', // place your logo file here
+                height: 60, // adjust size
+              ),
             ),
           ],
         ),

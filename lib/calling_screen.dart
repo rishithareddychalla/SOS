@@ -18,7 +18,7 @@ class CallingScreen extends ConsumerWidget {
         (c) => c['phone'] == currentNumber,
         orElse: () => {'name': 'Unknown'},
       )['name'];
-      statusText = 'Calling $contactName...\n($currentNumber)';
+      statusText = 'Calling $contactName'; //...\n($currentNumber)
     } else {
       statusText = 'Finished calling all emergency contacts.';
     }
@@ -96,22 +96,41 @@ class CallingScreen extends ConsumerWidget {
                       ],
                     ),
                     const SizedBox(height: 10),
-                    Text(
-                      statusText,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        fontSize: 20,
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+
                     const SizedBox(height: 10),
-                    if (remainingNumbers.isNotEmpty)
-                      const Text(
-                        'Waiting for call to end before trying next number...',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(fontSize: 16, color: Colors.white70),
-                      ),
+                    (remainingNumbers.isNotEmpty)
+                        ? Column(
+                            children: const [
+                              Text(
+                                'SOS is active.',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              SizedBox(height: 8), // spacing
+                              Text(
+                                'We are seeking help',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ],
+                          )
+                        : Text(
+                            'All emergency contacts have been called.',
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 20,
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                     const SizedBox(height: 40),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 20.0),
@@ -127,9 +146,19 @@ class CallingScreen extends ConsumerWidget {
                               : 'Return to Home',
                           style: const TextStyle(
                             fontSize: 18,
+                            color: Color(0xFFFB51963),
                             fontWeight: FontWeight.bold,
                           ),
                         ),
+                      ),
+                    ),
+                    const SizedBox(height: 50), // <-- pushes logo to bottom
+
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 20),
+                      child: Image.asset(
+                        'assets/images/logo_white.png', // place your logo file here
+                        height: 60, // adjust size
                       ),
                     ),
                   ],
