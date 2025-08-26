@@ -32,8 +32,8 @@ class _SplashScreenState extends State<SplashScreen> {
           children: [
             // Circle container
             Container(
-              width: 180,
-              height: 180,
+              width: 150,
+              height: 150,
               decoration: const BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white, // background color of circle
@@ -41,7 +41,7 @@ class _SplashScreenState extends State<SplashScreen> {
             ),
 
             // Logo on top
-            Image.asset('assets/images/logo_pink.png', width: 120, height: 120),
+            Image.asset('assets/images/logo_pink.png', width: 100, height: 100),
           ],
         ),
       ),
