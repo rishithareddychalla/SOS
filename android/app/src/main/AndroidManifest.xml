@@ -9,7 +9,7 @@
 
 
     <application
-        android:label="SOS emergency"
+        android:label="SOS Emergency"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

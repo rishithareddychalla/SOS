@@ -203,7 +203,6 @@ class MainScreen extends ConsumerWidget {
       Permission.location,
       Permission.phone,
       Permission.contacts,
-      Permission.notification,
     ];
     Map<Permission, PermissionStatus> statuses = await permissions.request();
     bool allGranted = true;
